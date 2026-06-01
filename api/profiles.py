@@ -1001,6 +1001,18 @@ def list_profiles_api() -> list:
     active = get_active_profile_name()
     result = []
     for p in infos:
+        # When the root/default profile has been retired for a named-profile
+        # workspace, keep it out of the WebUI profile list entirely.  This
+        # prevents stale browser bundles or cached panel state from showing a
+        # dead "default" card beside the active operator profile.
+        if (
+            p.name == 'default'
+            and active != 'default'
+            and not p.gateway_running
+            and not p.model
+            and not p.provider
+        ):
+            continue
         result.append({
             'name': p.name,
             'path': str(p.path),

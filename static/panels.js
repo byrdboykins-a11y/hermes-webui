@@ -5017,7 +5017,17 @@ async function loadProfilesPanel() {
       </div>`;
     explainer.onclick = () => _renderProfileConceptHelp(data.active || 'default');
     panel.appendChild(explainer);
-    if (!data.profiles || !data.profiles.length) {
+    const visibleProfiles = (data.profiles || []).filter((profile) => {
+      // If the default profile has been retired (no model/provider and no
+      // gateway), hide it from the active workspace lane instead of keeping a
+      // dead profile card beside the real operator profile.
+      return !(profile.name === 'default'
+        && data.active !== 'default'
+        && !profile.gateway_running
+        && !profile.model
+        && !profile.provider);
+    });
+    if (!visibleProfiles.length) {
       const emptyMsg = document.createElement('div');
       emptyMsg.style.cssText = 'padding:16px;color:var(--muted);font-size:12px';
       emptyMsg.textContent = t('profiles_no_profiles');
@@ -5025,10 +5035,10 @@ async function loadProfilesPanel() {
       if (_profileMode !== 'create') _clearProfileDetail();
       return;
     }
-    const activeName = (S.activeProfile && data.profiles.some(p => p.name === S.activeProfile))
+    const activeName = (S.activeProfile && visibleProfiles.some(p => p.name === S.activeProfile))
       ? S.activeProfile
-      : (data.active || 'default');
-    for (const p of data.profiles) {
+      : (data.active || visibleProfiles[0].name);
+    for (const p of visibleProfiles) {
       const card = document.createElement('div');
       card.className = 'profile-card';
       card.dataset.name = p.name;
